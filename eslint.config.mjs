@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored and utility files that are not part of the app source.
+    "public/opencv.js",
+    "scripts/**/*.js",
   ]),
 ]);
 
