@@ -174,56 +174,58 @@ export const ScannerApp: React.FC = () => {
 
   return (
     <div className="flex h-[100dvh] w-screen flex-col bg-neutral-950 font-sans text-neutral-100 antialiased selection:bg-neutral-800">
-      {/* Top Application Header */}
-      <header className="flex h-12 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-4">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded border border-neutral-700 bg-neutral-900 font-mono text-xs font-semibold text-neutral-200">
-              DS
+      {/* Top Application Header (Hidden in camera mode for true full-screen viewfinder) */}
+      {step !== 'camera' && (
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-4">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded border border-neutral-700 bg-neutral-900 font-mono text-xs font-semibold text-neutral-200">
+                DS
+              </div>
+              <h1 className="text-xs font-semibold tracking-wider text-neutral-200 uppercase">
+                DocScanner
+              </h1>
             </div>
-            <h1 className="text-xs font-semibold tracking-wider text-neutral-200 uppercase">
-              DocScanner
-            </h1>
-          </div>
 
-          <span className="hidden text-neutral-600 sm:inline">•</span>
-          <span className="hidden text-xs text-neutral-400 sm:inline">
-            Client-Side Document Scanner
-          </span>
-        </div>
-
-        {/* OpenCV Status Indicator */}
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1.5 text-xs text-neutral-400">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                isOpenCvReady
-                  ? 'bg-emerald-500 ring-2 ring-emerald-500/20'
-                  : isOpenCvLoading
-                  ? 'bg-amber-500 animate-pulse'
-                  : 'bg-red-500'
-              }`}
-            />
-            <span className="font-mono text-[11px] text-neutral-400">
-              {isOpenCvReady
-                ? 'CV Ready'
-                : isOpenCvLoading
-                ? `Loading Engine (${statusText})`
-                : 'CV Engine Error'}
+            <span className="hidden text-neutral-600 sm:inline">•</span>
+            <span className="hidden text-xs text-neutral-400 sm:inline">
+              Client-Side Document Scanner
             </span>
           </div>
 
-          {step !== 'home' && (
-            <button
-              onClick={handleResetForNewScan}
-              className="flex items-center gap-1 rounded border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:border-neutral-700 hover:text-white"
-            >
-              <ChevronLeft className="h-3 w-3" />
-              <span>New Scan</span>
-            </button>
-          )}
-        </div>
-      </header>
+          {/* OpenCV Status Indicator */}
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1.5 text-xs text-neutral-400">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isOpenCvReady
+                    ? 'bg-emerald-500 ring-2 ring-emerald-500/20'
+                    : isOpenCvLoading
+                    ? 'bg-amber-500 animate-pulse'
+                    : 'bg-red-500'
+                }`}
+              />
+              <span className="font-mono text-[11px] text-neutral-400">
+                {isOpenCvReady
+                  ? 'CV Ready'
+                  : isOpenCvLoading
+                  ? `Loading Engine (${statusText})`
+                  : 'CV Engine Error'}
+              </span>
+            </div>
+
+            {step !== 'home' && (
+              <button
+                onClick={handleResetForNewScan}
+                className="flex items-center gap-1 rounded border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:border-neutral-700 hover:text-white"
+              >
+                <ChevronLeft className="h-3 w-3" />
+                <span>New Scan</span>
+              </button>
+            )}
+          </div>
+        </header>
+      )}
 
       {/* Main Workspace Body */}
       <main className="relative flex flex-1 flex-col overflow-hidden">

@@ -44,44 +44,46 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-black text-white">
+    <div className="fixed inset-0 z-50 flex w-full flex-col bg-black text-white overflow-hidden">
       {/* Top Header */}
-      <div className="z-20 flex shrink-0 items-center justify-between bg-black/70 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
+      <div className="z-20 flex shrink-0 items-center justify-between bg-gradient-to-b from-black/90 via-black/60 to-transparent px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <button
           onClick={onCancel}
-          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-white/10 active:scale-95"
+          className="flex items-center gap-1.5 rounded-full bg-neutral-900/80 px-3 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 active:scale-95"
         >
           <X className="h-4 w-4" />
           <span>Cancel</span>
         </button>
 
-        <div className="text-xs font-medium tracking-wide text-neutral-200">
+        <div className="text-xs font-medium tracking-wide text-neutral-200 bg-neutral-900/80 px-3 py-1 rounded-full">
           Position document in frame
         </div>
 
         <div className="flex items-center gap-2">
-          {hasMultipleCameras && (
+          {hasMultipleCameras ? (
             <button
               onClick={switchCamera}
               disabled={isStarting}
               title={`Switch camera (currently ${facingMode})`}
-              className="rounded-md p-1.5 text-neutral-300 transition-colors hover:bg-white/10 active:scale-95 disabled:opacity-50"
+              className="rounded-full bg-neutral-900/80 p-2 text-neutral-200 transition-colors hover:bg-neutral-800 active:scale-95 disabled:opacity-50"
             >
               <SwitchCamera className="h-4 w-4" />
             </button>
+          ) : (
+            <div className="w-8" />
           )}
         </div>
       </div>
 
       {/* Camera Viewport Area */}
-      <div className="relative flex flex-1 min-h-0 w-full items-center justify-center overflow-hidden">
+      <div className="relative flex-1 min-h-0 w-full overflow-hidden flex items-center justify-center">
         {/* Live video */}
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className={`h-full w-full object-contain transition-opacity duration-300 ${
+          className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
             isActive ? 'opacity-100' : 'opacity-0'
           }`}
         />
@@ -96,7 +98,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
               <div className="absolute -bottom-1 -left-1 h-5 w-5 border-b-4 border-l-4 border-blue-500" />
               <div className="absolute -bottom-1 -right-1 h-5 w-5 border-b-4 border-r-4 border-blue-500" />
 
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded bg-black/60 px-3 py-1 text-center font-mono text-[11px] text-neutral-300 backdrop-blur-xs">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded bg-black/70 px-3 py-1 text-center font-mono text-[11px] text-neutral-300 backdrop-blur-xs whitespace-nowrap">
                 Hold still • Good lighting helps detection
               </div>
             </div>
@@ -137,10 +139,10 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       </div>
 
       {/* Capture Shutter Bar */}
-      <div className="z-20 flex shrink-0 items-center justify-around bg-black/85 px-6 pt-3 pb-[max(1.75rem,env(safe-area-inset-bottom))] backdrop-blur-md shadow-[0_-10px_25px_rgba(0,0,0,0.5)]">
+      <div className="z-20 flex shrink-0 items-center justify-around bg-gradient-to-t from-black via-black/85 to-transparent px-6 pt-3 pb-8 sm:pb-6">
         <button
           onClick={onSwitchToUpload}
-          className="text-xs text-neutral-400 underline-offset-4 hover:text-neutral-200 hover:underline active:scale-95"
+          className="text-xs font-medium text-neutral-400 underline-offset-4 hover:text-neutral-200 hover:underline active:scale-95"
         >
           Choose file
         </button>
@@ -150,7 +152,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
           onClick={handleCaptureClick}
           disabled={!isActive}
           title="Capture Document"
-          className="group relative flex h-18 w-18 items-center justify-center rounded-full border-4 border-white/90 p-1 shadow-lg transition-all hover:scale-105 active:scale-90 disabled:pointer-events-none disabled:opacity-40"
+          aria-label="Capture Document"
+          className="group relative flex h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center rounded-full border-4 border-white p-1 shadow-2xl transition-all hover:scale-105 active:scale-90 disabled:pointer-events-none disabled:opacity-40"
         >
           <div className="h-full w-full rounded-full bg-white transition-colors group-hover:bg-neutral-200" />
         </button>
