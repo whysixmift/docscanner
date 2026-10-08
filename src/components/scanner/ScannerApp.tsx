@@ -173,7 +173,7 @@ export const ScannerApp: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-neutral-950 font-sans text-neutral-100 antialiased selection:bg-neutral-800">
+    <div className="flex h-[100dvh] w-screen flex-col bg-neutral-950 font-sans text-neutral-100 antialiased selection:bg-neutral-800">
       {/* Top Application Header */}
       <header className="flex h-12 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-4">
         <div className="flex items-center space-x-3">

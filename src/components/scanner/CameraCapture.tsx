@@ -44,12 +44,12 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
   };
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-black text-white">
+    <div className="fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-black text-white">
       {/* Top Header */}
-      <div className="z-20 flex items-center justify-between bg-black/60 px-4 py-3 backdrop-blur-xs">
+      <div className="z-20 flex shrink-0 items-center justify-between bg-black/70 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
         <button
           onClick={onCancel}
-          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-white/10"
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-white/10 active:scale-95"
         >
           <X className="h-4 w-4" />
           <span>Cancel</span>
@@ -74,7 +74,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       </div>
 
       {/* Camera Viewport Area */}
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+      <div className="relative flex flex-1 min-h-0 w-full items-center justify-center overflow-hidden">
         {/* Live video */}
         <video
           ref={videoRef}
@@ -137,10 +137,10 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       </div>
 
       {/* Capture Shutter Bar */}
-      <div className="z-20 flex items-center justify-around bg-black/80 px-6 py-6 backdrop-blur-xs">
+      <div className="z-20 flex shrink-0 items-center justify-around bg-black/85 px-6 pt-3 pb-[max(1.75rem,env(safe-area-inset-bottom))] backdrop-blur-md shadow-[0_-10px_25px_rgba(0,0,0,0.5)]">
         <button
           onClick={onSwitchToUpload}
-          className="text-xs text-neutral-400 underline-offset-4 hover:text-neutral-200 hover:underline"
+          className="text-xs text-neutral-400 underline-offset-4 hover:text-neutral-200 hover:underline active:scale-95"
         >
           Choose file
         </button>
@@ -150,7 +150,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
           onClick={handleCaptureClick}
           disabled={!isActive}
           title="Capture Document"
-          className="group relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-white/80 p-1 transition-all hover:scale-105 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+          className="group relative flex h-18 w-18 items-center justify-center rounded-full border-4 border-white/90 p-1 shadow-lg transition-all hover:scale-105 active:scale-90 disabled:pointer-events-none disabled:opacity-40"
         >
           <div className="h-full w-full rounded-full bg-white transition-colors group-hover:bg-neutral-200" />
         </button>
