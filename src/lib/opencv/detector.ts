@@ -3,9 +3,7 @@
 import { DetectionResult, Point, QuadCorners } from './types';
 import { loadOpenCV } from './loader';
 
-/**
- * Calculate polygon area using the Shoelace formula
- */
+// Hitung luas poligon menggunakan rumus Shoelace (Gauss formula)
 function shoelaceArea(pts: Point[]): number {
   let area = 0;
   for (let i = 0; i < pts.length; i++) {
@@ -15,16 +13,13 @@ function shoelaceArea(pts: Point[]): number {
   return Math.abs(area) / 2;
 }
 
-/**
- * Given a convex hull of N points (N >= 4), finds the 4 vertices that maximize quadrilateral area.
- * This handles documents with folded corners, rounded corners, staple holes, or curved edges.
- */
+// Cari 4 sudut segiempat dengan luas terbesar dari convex hull
 function findMaxAreaQuad(hullPts: Point[]): Point[] | null {
   const n = hullPts.length;
   if (n === 4) return hullPts;
   if (n < 4) return null;
 
-  // For hulls with many vertices, take at most 14 dominant vertices to keep combinatorial search instantaneous (<0.1ms)
+  // Batasi maksimal 14 titik dominan untuk menjaga performa
   let pts = hullPts;
   if (n > 14) {
     const step = n / 14;
@@ -56,9 +51,7 @@ function findMaxAreaQuad(hullPts: Point[]): Point[] | null {
   return bestQuad;
 }
 
-/**
- * Robustly order 4 quadrilateral points into [TL, TR, BR, BL]
- */
+// Urutkan 4 titik sudut searah jarum jam: [Top-Left, Top-Right, Bottom-Right, Bottom-Left]
 export function orderCorners(pts: Point[]): QuadCorners {
   if (pts.length !== 4) {
     throw new Error('Expected 4 points for ordering');
@@ -177,7 +170,7 @@ export async function detectDocument(
     throw new Error('Invalid image dimensions');
   }
 
-  // Downscale image to a normalized max dimension for fast, robust contour detection
+  // Downscale sementara jika gambar terlalu besar agar deteksi cepat
   const MAX_PROCESSING_DIM = 900;
   let processWidth = srcWidth;
   let processHeight = srcHeight;
@@ -214,14 +207,16 @@ export async function detectDocument(
 
   try {
     const srcMat = track(cv.imread(offscreenCanvas));
+
+    // Konversi ke grayscale
     const gray = track(new cv.Mat());
     cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
 
-    // 1. Gentle Gaussian blur to eliminate paper micro-textures and text noise
+    // Reduksi noise dengan Gaussian blur
     const blurred = track(new cv.Mat());
     cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
 
-    // 2. CLAHE for contrast enhancement in low-contrast & light-on-light scenes
+    // Normalisasi kontras (CLAHE)
     const clahe = track(new cv.CLAHE(3.0, new cv.Size(8, 8)));
     const equalized = track(new cv.Mat());
     clahe.apply(blurred, equalized);
@@ -285,8 +280,7 @@ export async function detectDocument(
       }
     };
 
-    // STRATEGY 1: Adaptive Local Thresholding with RETR_EXTERNAL
-    // Exceptional against strong cast shadows, lighting gradients, and non-uniform illumination
+    // Strategi 1: Adaptive thresholding (tahan bayangan dan pencahayaan tidak merata)
     const adaptiveThresh = track(new cv.Mat());
     cv.adaptiveThreshold(blurred, adaptiveThresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 51, -8);
 
@@ -302,8 +296,7 @@ export async function detectDocument(
       evaluateContour(contoursAdaptive.get(i), 1.2);
     }
 
-    // STRATEGY 2: CLAHE Equalized Canny
-    // Exceptional for light documents on light desks (low contrast)
+    // Strategi 2: CLAHE + Canny (efektif untuk kertas putih di meja terang / low-contrast)
     const edgesClahe = track(new cv.Mat());
     cv.Canny(equalized, edgesClahe, 35, 110);
     const dilateKernel = track(cv.Mat.ones(3, 3, cv.CV_8U));
@@ -318,8 +311,7 @@ export async function detectDocument(
       evaluateContour(contoursClahe.get(i), 1.0);
     }
 
-    // STRATEGY 3: Standard Multi-scale Canny
-    // Clean high precision on standard dark/medium backgrounds
+    // Strategi 3: Canny standar (efektif untuk background kontras tinggi)
     const edgesStd = track(new cv.Mat());
     cv.Canny(blurred, edgesStd, 50, 150);
     const dilatedStd = track(new cv.Mat());

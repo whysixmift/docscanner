@@ -3,16 +3,12 @@
 import { Point, QuadCorners } from './types';
 import { loadOpenCV } from './loader';
 
-/**
- * Calculate Euclidean distance between two points
- */
+// Hitung jarak Euclidean antara dua titik
 export function distance(p1: Point, p2: Point): number {
   return Math.hypot(p2.x - p1.x, p2.y - p1.y);
 }
 
-/**
- * Calculate the true un-distorted rectangular dimensions from quadrilateral corners
- */
+// Hitung estimasi lebar & tinggi dokumen persegi panjang setelah diluruskan
 export function calculateOutputDimensions(corners: QuadCorners): { width: number; height: number } {
   const [tl, tr, br, bl] = corners;
 
@@ -31,10 +27,7 @@ export function calculateOutputDimensions(corners: QuadCorners): { width: number
   return { width, height };
 }
 
-/**
- * Apply perspective correction to an image given 4 corners
- * Returns an HTMLCanvasElement containing the warped document
- */
+// Luruskan dokumen miring menggunakan warpPerspective OpenCV
 export async function warpPerspectiveDoc(
   source: HTMLImageElement | HTMLCanvasElement,
   corners: QuadCorners

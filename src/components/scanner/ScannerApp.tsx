@@ -18,9 +18,11 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 
+// Langkah-langkah navigasi scanner
 type ScannerStep = 'home' | 'camera' | 'detecting' | 'adjust' | 'result';
 
 export const ScannerApp: React.FC = () => {
+  // Hook OpenCV instance
   const {
     isReady: isOpenCvReady,
     isLoading: isOpenCvLoading,
@@ -38,7 +40,7 @@ export const ScannerApp: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Process a loaded image/canvas through the OpenCV detection pipeline
+  // Proses gambar sumber ke pipeline deteksi sudut
   const processImageForDetection = useCallback(
     async (source: HTMLImageElement | HTMLCanvasElement) => {
       setSourceImage(source);
@@ -71,7 +73,7 @@ export const ScannerApp: React.FC = () => {
     []
   );
 
-  // Handle file upload
+  // Input via upload file gambar
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -90,7 +92,7 @@ export const ScannerApp: React.FC = () => {
     }
   };
 
-  // Drag and drop image
+  // Input via drag and drop
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
@@ -105,12 +107,12 @@ export const ScannerApp: React.FC = () => {
     }
   };
 
-  // Camera frame captured
+  // Tangkap frame gambar dari kamera
   const handleCameraCapture = async (canvas: HTMLCanvasElement) => {
     await processImageForDetection(canvas);
   };
 
-  // Rotate source image 90 degrees
+  // Putar orientasi gambar 90 derajat
   const handleRotateSource = async () => {
     if (!sourceImage) return;
 
@@ -127,7 +129,7 @@ export const ScannerApp: React.FC = () => {
     await processImageForDetection(rotated);
   };
 
-  // Re-run auto detect on current source
+  // Jalankan ulang auto deteksi batas kertas
   const handleReRunAutoDetect = async () => {
     if (!sourceImage) return;
     setIsDetecting(true);
@@ -146,7 +148,7 @@ export const ScannerApp: React.FC = () => {
     }
   };
 
-  // Confirm corner selection and perform perspective transform
+  // Konfirmasi 4 titik sudut & luruskan dokumen (perspective warp)
   const handleConfirmCorners = async () => {
     if (!sourceImage || !corners) return;
 

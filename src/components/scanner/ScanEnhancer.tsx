@@ -36,7 +36,7 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
 
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Re-run enhancement whenever mode, canvas, or slider values change
+  // Terapkan filter visual dokumen (Color Enhance, B&W, Grayscale, dsb.)
   const runEnhancement = useCallback(async () => {
     setIsProcessing(true);
     try {
@@ -73,13 +73,13 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
     return () => window.clearTimeout(timeoutId);
   }, [runEnhancement]);
 
-  // Rotate straightened document 90 degrees clockwise
+  // Rotasi dokumen hasil straightening 90 derajat searah jarum jam
   const handleRotate = () => {
     const rotated = rotateCanvas(currentCanvas, 90);
     setCurrentCanvas(rotated);
   };
 
-  // Download scanned image directly
+  // Download hasil scan (JPG atau PNG)
   const handleDownloadImage = (format: 'jpeg' | 'png') => {
     if (!processedDataUrl) return;
     const filename = `scanned-document-${Date.now()}.${format === 'png' ? 'png' : 'jpg'}`;

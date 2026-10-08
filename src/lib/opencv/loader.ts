@@ -1,17 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-// Candidate URLs for OpenCV.js
-// Priority:
-// 1. Fast global Cloudflare-edge CDN (Brotli compressed ~3.5MB vs 13.3MB raw)
-// 2. Unpkg global CDN fallback
-// 3. Local origin fallback (/opencv.js)
+// Sumber CDN & fallback lokal untuk OpenCV WebAssembly
 const OPENCV_SOURCES: string[] = [
   'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@5.0.0-release.1/dist/opencv.js',
   'https://unpkg.com/@techstark/opencv-js@5.0.0-release.1/dist/opencv.js',
   '/opencv.js',
 ];
 
-// Singleton promise to prevent redundant script injections
+// Singleton promise untuk mencegah script di-inject berulang kali jika user klik berkali-kali
 let cvPromise: Promise<any> | null = null;
 let currentStatus = 'Connecting...';
 const statusListeners = new Set<(status: string) => void>();
