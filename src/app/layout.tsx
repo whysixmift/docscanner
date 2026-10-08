@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DocScanner — Document Scanner & Perspective Correction",
-  description: "High-precision client-side document scanner with automatic paper boundary detection, perspective correction, enhancement filters, and PDF export.",
+  description: "High-precision client-side document scanner with automatic paper boundary detection, perspective correction, and enhancement filters.",
 };
 
 export default function RootLayout({

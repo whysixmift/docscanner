@@ -1,37 +1,28 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { EnhancementMode, EnhancementOptions, ScannedPage } from '@/lib/opencv/types';
+import { EnhancementMode, EnhancementOptions } from '@/lib/opencv/types';
 import { applyEnhancement } from '@/lib/opencv/enhancement';
 import { rotateCanvas, downloadDataUrl } from '@/lib/image/utils';
-import { exportPagesToPdf } from '@/lib/pdf/exporter';
 import {
   Download,
   RotateCw,
   Crop,
-  Plus,
   Sliders,
   Check,
   RefreshCw,
-  FileDown,
 } from 'lucide-react';
 
 interface ScanEnhancerProps {
   warpedCanvas: HTMLCanvasElement;
   onReCrop: () => void;
-  onAddPage: (page: ScannedPage) => void;
   onReset: () => void;
-  allPages: ScannedPage[];
-  currentPageId: string;
 }
 
 export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
   warpedCanvas,
   onReCrop,
-  onAddPage,
   onReset,
-  allPages,
-  currentPageId,
 }) => {
   const [currentCanvas, setCurrentCanvas] = useState<HTMLCanvasElement>(warpedCanvas);
   const [mode, setMode] = useState<EnhancementMode>('color');
@@ -42,7 +33,6 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
   const [showSliders, setShowSliders] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processedDataUrl, setProcessedDataUrl] = useState<string>('');
-  const [pdfExporting, setPdfExporting] = useState<boolean>(false);
 
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -79,24 +69,20 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void runEnhancement();
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    }, 40);
+    return () => window.clearTimeout(timeoutId);
   }, [runEnhancement]);
 
-  // Rotate document 90 deg clockwise
+  // Rotate straightened document 90 degrees clockwise
   const handleRotate = () => {
     const rotated = rotateCanvas(currentCanvas, 90);
     setCurrentCanvas(rotated);
   };
 
-  // Download single image
+  // Download scanned image directly
   const handleDownloadImage = (format: 'jpeg' | 'png') => {
     if (!processedDataUrl) return;
-    const ext = format === 'jpeg' ? 'jpg' : 'png';
-    const filename = `scan-${new Date().toISOString().slice(0, 10)}-${Date.now().toString().slice(-4)}.${ext}`;
+    const filename = `scanned-document-${Date.now()}.${format === 'png' ? 'png' : 'jpg'}`;
     
     if (format === 'png' && previewCanvasRef.current) {
       const pngUrl = previewCanvasRef.current.toDataURL('image/png');
@@ -104,67 +90,6 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
     } else {
       downloadDataUrl(processedDataUrl, filename);
     }
-  };
-
-  // Export PDF (supports all scanned pages in current session)
-  const handleExportPdf = async (pageSize: 'a4' | 'fit' = 'a4') => {
-    setPdfExporting(true);
-    try {
-      // Build current page object
-      const currentPage: ScannedPage = {
-        id: currentPageId,
-        originalDataUrl: '',
-        corners: [
-          { x: 0, y: 0 },
-          { x: currentCanvas.width, y: 0 },
-          { x: currentCanvas.width, y: currentCanvas.height },
-          { x: 0, y: currentCanvas.height },
-        ],
-        originalWidth: currentCanvas.width,
-        originalHeight: currentCanvas.height,
-        processedDataUrl,
-        mode,
-        options: { mode, brightness, contrast, threshold, sharpness },
-        createdAt: Date.now(),
-      };
-
-      // If other pages exist, include them; otherwise export this page
-      const exportList = allPages.length > 0 
-        ? allPages.map((p) => (p.id === currentPageId ? currentPage : p))
-        : [currentPage];
-
-      await exportPagesToPdf(exportList, {
-        pageSize,
-        filename: `scanned-document-${new Date().toISOString().slice(0, 10)}.pdf`,
-      });
-    } catch (err) {
-      console.error('PDF export failed:', err);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setPdfExporting(false);
-    }
-  };
-
-  // Add current scan to session pages
-  const handleAddCurrentPageToTray = () => {
-    if (!processedDataUrl) return;
-    const newPage: ScannedPage = {
-      id: currentPageId || `page-${Date.now()}`,
-      originalDataUrl: '',
-      corners: [
-        { x: 0, y: 0 },
-        { x: currentCanvas.width, y: 0 },
-        { x: currentCanvas.width, y: currentCanvas.height },
-        { x: 0, y: currentCanvas.height },
-      ],
-      originalWidth: currentCanvas.width,
-      originalHeight: currentCanvas.height,
-      processedDataUrl,
-      mode,
-      options: { mode, brightness, contrast, threshold, sharpness },
-      createdAt: Date.now(),
-    };
-    onAddPage(newPage);
   };
 
   const modeButtons: { key: EnhancementMode; label: string; desc: string }[] = [
@@ -178,119 +103,108 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
     <div className="flex h-full w-full flex-col bg-neutral-950 text-neutral-200">
       {/* Top Controls Bar */}
       <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 bg-neutral-900/90 px-4 py-2.5">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-            Document Scan
-          </span>
-          <span className="rounded bg-neutral-800 px-2 py-0.5 font-mono text-[11px] text-neutral-300">
-            {currentCanvas.width} × {currentCanvas.height} px
-          </span>
-        </div>
-
-        <div className="flex items-center space-x-1.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={onReCrop}
-            title="Adjust corners / Re-crop"
-            className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:bg-neutral-700 active:scale-95"
+            className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-neutral-750 hover:text-white"
           >
             <Crop className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Adjust Corners</span>
+            <span>Re-Crop</span>
           </button>
 
           <button
             onClick={handleRotate}
-            title="Rotate 90 degrees"
-            className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:bg-neutral-700 active:scale-95"
+            className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-neutral-750 hover:text-white"
           >
             <RotateCw className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Rotate</span>
+            <span>Rotate 90°</span>
           </button>
+        </div>
 
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSliders(!showSliders)}
-            title="Fine-tune filters"
-            className={`flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs transition-colors active:scale-95 ${
+            className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs transition-colors ${
               showSliders
-                ? 'border-blue-500 bg-blue-950/60 text-blue-300'
-                : 'border-neutral-700 bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                ? 'border-blue-500 bg-blue-950/40 text-blue-300'
+                : 'border-neutral-700 bg-neutral-800 text-neutral-300 hover:bg-neutral-750'
             }`}
           >
             <Sliders className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Fine Tune</span>
+            <span>Tune</span>
           </button>
         </div>
       </div>
 
-      {/* Main Preview Area */}
-      <div className="relative flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
-        <div className="relative max-h-full max-w-full shadow-2xl">
+      {/* Main Document Preview Viewport */}
+      <div className="relative flex flex-1 items-center justify-center overflow-auto p-4 sm:p-6">
+        <div className="relative flex max-h-full max-w-full items-center justify-center shadow-2xl">
           <canvas
             ref={previewCanvasRef}
-            className="max-h-[68vh] max-w-full rounded border border-neutral-800 bg-white object-contain shadow-xl"
+            className="max-h-[72vh] max-w-full rounded border border-neutral-800 bg-neutral-900 object-contain shadow-lg"
           />
 
           {isProcessing && (
-            <div className="absolute inset-0 flex items-center justify-center rounded bg-black/30 backdrop-blur-xs">
-              <RefreshCw className="h-6 w-6 animate-spin text-white" />
+            <div className="absolute inset-0 flex items-center justify-center rounded bg-black/40 backdrop-blur-xs">
+              <RefreshCw className="h-6 w-6 animate-spin text-blue-400" />
             </div>
           )}
         </div>
       </div>
 
-      {/* Optional Fine-Tune Drawer */}
+      {/* Slider Drawer (Collapsible) */}
       {showSliders && (
-        <div className="border-t border-neutral-800 bg-neutral-900/95 px-6 py-3 backdrop-blur-md">
-          <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3 text-xs">
-            {/* Brightness */}
+        <div className="border-t border-neutral-800 bg-neutral-900/95 px-6 py-3 text-xs">
+          <div className="mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
               <div className="mb-1 flex justify-between text-neutral-400">
                 <span>Brightness</span>
-                <span className="font-mono">{brightness}</span>
+                <span className="font-mono">{brightness > 0 ? `+${brightness}` : brightness}</span>
               </div>
               <input
                 type="range"
-                min="-40"
-                max="40"
+                min="-60"
+                max="60"
                 value={brightness}
                 onChange={(e) => setBrightness(parseInt(e.target.value, 10))}
                 className="w-full accent-blue-500"
               />
             </div>
 
-            {/* Contrast */}
             <div>
               <div className="mb-1 flex justify-between text-neutral-400">
                 <span>Contrast</span>
-                <span className="font-mono">{contrast.toFixed(2)}x</span>
+                <span className="font-mono">{contrast.toFixed(1)}x</span>
               </div>
               <input
                 type="range"
-                min="0.6"
-                max="1.8"
-                step="0.05"
+                min="0.5"
+                max="2.5"
+                step="0.1"
                 value={contrast}
                 onChange={(e) => setContrast(parseFloat(e.target.value))}
                 className="w-full accent-blue-500"
               />
             </div>
 
-            {/* Threshold or Sharpness */}
-            {mode === 'bw' ? (
+            {mode === 'bw' && (
               <div>
                 <div className="mb-1 flex justify-between text-neutral-400">
-                  <span>B&W Sensitivity</span>
+                  <span>Threshold</span>
                   <span className="font-mono">{threshold}</span>
                 </div>
                 <input
                   type="range"
-                  min="4"
-                  max="35"
+                  min="3"
+                  max="45"
                   value={threshold}
                   onChange={(e) => setThreshold(parseInt(e.target.value, 10))}
                   className="w-full accent-blue-500"
                 />
               </div>
-            ) : (
+            )}
+
+            {mode !== 'bw' && (
               <div>
                 <div className="mb-1 flex justify-between text-neutral-400">
                   <span>Sharpness</span>
@@ -338,48 +252,24 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
           {/* Action Export Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
-              onClick={handleAddCurrentPageToTray}
-              title="Add page to multi-page document"
-              className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-750 active:scale-95"
-            >
-              <Plus className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Add Page</span>
-            </button>
-
-            <button
               onClick={() => handleDownloadImage('jpeg')}
-              className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-750 active:scale-95"
+              className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3.5 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-750 active:scale-95"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>JPG</span>
+              <span>Download JPG</span>
             </button>
 
             <button
               onClick={() => handleDownloadImage('png')}
-              className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-750 active:scale-95"
+              className="flex items-center gap-1.5 rounded bg-blue-600 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-500 active:scale-95"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>PNG</span>
-            </button>
-
-            <button
-              onClick={() => handleExportPdf('a4')}
-              disabled={pdfExporting}
-              className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-500 active:scale-95 disabled:opacity-50"
-            >
-              {pdfExporting ? (
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <FileDown className="h-3.5 w-3.5" />
-              )}
-              <span>
-                Export PDF {allPages.length > 0 ? `(${allPages.length + 1} pgs)` : ''}
-              </span>
+              <span>Download PNG</span>
             </button>
 
             <button
               onClick={onReset}
-              className="text-xs text-neutral-400 underline-offset-4 hover:text-neutral-200 hover:underline px-2"
+              className="px-2 text-xs text-neutral-400 underline-offset-4 hover:text-neutral-200 hover:underline"
             >
               Scan New
             </button>

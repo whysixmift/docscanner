@@ -2,18 +2,16 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { useOpenCV } from '@/hooks/useOpenCV';
-import { QuadCorners, ScannedPage, DetectionResult } from '@/lib/opencv/types';
+import { QuadCorners, DetectionResult } from '@/lib/opencv/types';
 import { detectDocument, getDefaultCorners } from '@/lib/opencv/detector';
 import { warpPerspectiveDoc } from '@/lib/opencv/perspective';
 import { readFileAsDataURL, loadImage, rotateCanvas } from '@/lib/image/utils';
 import { CameraCapture } from './CameraCapture';
 import { DocumentCornerEditor } from './DocumentCornerEditor';
 import { ScanEnhancer } from './ScanEnhancer';
-import { MultiPageTray } from './MultiPageTray';
 import {
   Camera,
   Upload,
-  FileText,
   AlertCircle,
   RefreshCw,
   FileCheck,
@@ -37,10 +35,6 @@ export const ScannerApp: React.FC = () => {
   const [detectionMessage, setDetectionMessage] = useState<string | null>(null);
   const [isDetecting, setIsDetecting] = useState<boolean>(false);
   const [warpedCanvas, setWarpedCanvas] = useState<HTMLCanvasElement | null>(null);
-
-  // Multi-page document session
-  const [pages, setPages] = useState<ScannedPage[]>([]);
-  const [activePageId, setActivePageId] = useState<string>('page-1');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -168,167 +162,12 @@ export const ScannerApp: React.FC = () => {
     }
   };
 
-  // Add page to session
-  const handleAddPage = (page: ScannedPage) => {
-    setPages((prev) => {
-      const existing = prev.findIndex((p) => p.id === page.id);
-      if (existing >= 0) {
-        const next = [...prev];
-        next[existing] = page;
-        return next;
-      }
-      return [...prev, page];
-    });
-    // Reset to scan another page
-    handleResetForNewScan();
-  };
-
-  // Reset to scan a fresh page
+  // Reset to scan a fresh document
   const handleResetForNewScan = () => {
     setSourceImage(null);
     setCorners(null);
     setWarpedCanvas(null);
-    setActivePageId(`page-${Date.now()}`);
     setStep('home');
-  };
-
-  // Total reset
-  const handleTotalReset = () => {
-    setPages([]);
-    handleResetForNewScan();
-  };
-
-  // Select page from tray
-  const handleSelectPage = async (pageId: string) => {
-    const page = pages.find((p) => p.id === pageId);
-    if (!page) return;
-    setActivePageId(page.id);
-    const img = await loadImage(page.processedDataUrl);
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(img, 0, 0);
-      setWarpedCanvas(canvas);
-      setStep('result');
-    }
-  };
-
-  // Delete page from tray
-  const handleDeletePage = (pageId: string) => {
-    setPages((prev) => prev.filter((p) => p.id !== pageId));
-  };
-
-  // Load a built-in realistic test sample (so users can test right away on desktop)
-  const handleLoadSample = async (sampleType: 'invoice' | 'receipt') => {
-    // Generate a high-detail realistic document on canvas
-    const sampleCanvas = document.createElement('canvas');
-    sampleCanvas.width = 1200;
-    sampleCanvas.height = 900;
-    const ctx = sampleCanvas.getContext('2d');
-    if (!ctx) return;
-
-    // Background: dark wood desk
-    ctx.fillStyle = '#26211d';
-    ctx.fillRect(0, 0, 1200, 900);
-    // Desk grain lines
-    ctx.strokeStyle = '#322b26';
-    ctx.lineWidth = 2;
-    for (let y = 0; y < 900; y += 40) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.bezierCurveTo(400, y + 10, 800, y - 10, 1200, y + 5);
-      ctx.stroke();
-    }
-
-    // Shadow under tilted document
-    ctx.save();
-    ctx.translate(600, 450);
-    const angle = sampleType === 'invoice' ? -0.08 : 0.06;
-    ctx.rotate(angle);
-
-    const docW = sampleType === 'invoice' ? 520 : 360;
-    const docH = sampleType === 'invoice' ? 720 : 680;
-
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-    ctx.fillRect(-docW / 2 + 15, -docH / 2 + 18, docW, docH);
-
-    // Document paper (off-white crisp sheet)
-    ctx.fillStyle = '#f8f8f6';
-    ctx.fillRect(-docW / 2, -docH / 2, docW, docH);
-
-    // Document header
-    ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText(sampleType === 'invoice' ? 'TAX INVOICE' : 'PURCHASE RECEIPT', -docW / 2 + 35, -docH / 2 + 60);
-
-    ctx.font = '11px monospace';
-    ctx.fillStyle = '#64748b';
-    ctx.fillText(sampleType === 'invoice' ? 'INV-2026-08492' : 'ORDER #98231', -docW / 2 + 35, -docH / 2 + 82);
-    ctx.fillText('DATE: 2026-10-06', -docW / 2 + 35, -docH / 2 + 98);
-
-    // Divider line
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-docW / 2 + 35, -docH / 2 + 115);
-    ctx.lineTo(docW / 2 - 35, -docH / 2 + 115);
-    ctx.stroke();
-
-    // Table rows
-    const items = sampleType === 'invoice'
-      ? [
-          { desc: 'Optical Engineering Consultation', qty: '12 hrs', total: '$1,800.00' },
-          { desc: 'Perspective Correction Pipeline Dev', qty: '1 unit', total: '$2,450.00' },
-          { desc: 'Client-side PDF Exporter Module', qty: '1 unit', total: '$950.00' },
-          { desc: 'Multi-device Hardware Testing', qty: '4 hrs', total: '$480.00' },
-        ]
-      : [
-          { desc: 'Espresso Roast (500g)', qty: '2', total: '$28.00' },
-          { desc: 'Pour-over Paper Filters #4', qty: '1', total: '$8.50' },
-          { desc: 'Ceramic Mug 350ml', qty: '1', total: '$16.00' },
-        ];
-
-    let startY = -docH / 2 + 150;
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = '#334155';
-    ctx.fillText('DESCRIPTION', -docW / 2 + 35, startY);
-    ctx.fillText('AMOUNT', docW / 2 - 90, startY);
-
-    startY += 25;
-    ctx.font = '12px sans-serif';
-    ctx.fillStyle = '#475569';
-    items.forEach((item) => {
-      ctx.fillText(item.desc, -docW / 2 + 35, startY);
-      ctx.fillText(item.total, docW / 2 - 90, startY);
-      startY += 30;
-    });
-
-    // Total box
-    startY += 20;
-    ctx.beginPath();
-    ctx.moveTo(-docW / 2 + 35, startY);
-    ctx.lineTo(docW / 2 - 35, startY);
-    ctx.stroke();
-
-    startY += 30;
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillStyle = '#0f172a';
-    ctx.fillText('BALANCE DUE:', -docW / 2 + 35, startY);
-    ctx.fillText(sampleType === 'invoice' ? '$5,680.00 USD' : '$52.50 USD', docW / 2 - 130, startY);
-
-    // Stamp / signature at bottom
-    ctx.strokeStyle = '#2563eb';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(docW / 2 - 140, docH / 2 - 100, 105, 45);
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = '#2563eb';
-    ctx.fillText('VERIFIED', docW / 2 - 118, docH / 2 - 72);
-
-    ctx.restore();
-
-    await processImageForDetection(sampleCanvas);
   };
 
   return (
@@ -383,17 +222,6 @@ export const ScannerApp: React.FC = () => {
           )}
         </div>
       </header>
-
-      {/* Multi-page session tray if pages exist */}
-      {pages.length > 0 && (
-        <MultiPageTray
-          pages={pages}
-          activePageId={activePageId}
-          onSelectPage={handleSelectPage}
-          onDeletePage={handleDeletePage}
-          onAddNewPage={handleResetForNewScan}
-        />
-      )}
 
       {/* Main Workspace Body */}
       <main className="relative flex flex-1 flex-col overflow-hidden">
@@ -468,29 +296,6 @@ export const ScannerApp: React.FC = () => {
                 />
               </div>
 
-              {/* Sample test documents for instant testing */}
-              <div className="border-t border-neutral-850 pt-5">
-                <span className="text-xs text-neutral-500">
-                  No camera or photo handy? Test with sample documents:
-                </span>
-                <div className="mt-2.5 flex justify-center gap-2">
-                  <button
-                    onClick={() => handleLoadSample('invoice')}
-                    className="flex items-center gap-1.5 rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:border-neutral-700 hover:bg-neutral-850"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-blue-400" />
-                    <span>Angled Invoice Sample</span>
-                  </button>
-                  <button
-                    onClick={() => handleLoadSample('receipt')}
-                    className="flex items-center gap-1.5 rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:border-neutral-700 hover:bg-neutral-850"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>Desk Receipt Sample</span>
-                  </button>
-                </div>
-              </div>
-
               {/* Privacy badge */}
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-500">
                 <FileCheck className="h-3.5 w-3.5 text-emerald-500" />
@@ -542,10 +347,7 @@ export const ScannerApp: React.FC = () => {
           <ScanEnhancer
             warpedCanvas={warpedCanvas}
             onReCrop={() => setStep('adjust')}
-            onAddPage={handleAddPage}
-            onReset={handleTotalReset}
-            allPages={pages}
-            currentPageId={activePageId}
+            onReset={handleResetForNewScan}
           />
         )}
       </main>
