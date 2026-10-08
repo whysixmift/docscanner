@@ -73,8 +73,8 @@ export function useCamera(): UseCameraReturn {
           audio: false,
           video: {
             facingMode: { ideal: mode },
-            width: { ideal: 1920, min: 640 },
-            height: { ideal: 1080, min: 480 },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
           },
         };
 
