@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { EnhancementMode, EnhancementOptions, ScannedPage } from '@/lib/opencv/types';
+import { EnhancementMode, EnhancementOptions } from '@/lib/opencv/types';
 import { applyEnhancement } from '@/lib/opencv/enhancement';
 import { rotateCanvas, downloadDataUrl } from '@/lib/image/utils';
-import { exportPagesToPdf } from '@/lib/pdf/exporter';
 import {
   Download,
   RotateCw,
@@ -12,7 +11,6 @@ import {
   Sliders,
   Check,
   RefreshCw,
-  FileText,
 } from 'lucide-react';
 
 interface ScanEnhancerProps {
@@ -34,12 +32,10 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
   const [sharpness, setSharpness] = useState<number>(1.0);
   const [showSliders, setShowSliders] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
   const [processedDataUrl, setProcessedDataUrl] = useState<string>('');
 
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Terapkan filter visual dokumen (Color Enhance, B&W, Grayscale, dsb.)
   const runEnhancement = useCallback(async () => {
     setIsProcessing(true);
     try {
@@ -76,13 +72,11 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
     return () => window.clearTimeout(timeoutId);
   }, [runEnhancement]);
 
-  // Rotasi dokumen hasil straightening 90 derajat searah jarum jam
   const handleRotate = () => {
     const rotated = rotateCanvas(currentCanvas, 90);
     setCurrentCanvas(rotated);
   };
 
-  // Download hasil scan (JPG atau PNG)
   const handleDownloadImage = (format: 'jpeg' | 'png') => {
     if (!processedDataUrl) return;
     const filename = `scanned-document-${Date.now()}.${format === 'png' ? 'png' : 'jpg'}`;
@@ -92,41 +86,6 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
       downloadDataUrl(pngUrl, filename);
     } else {
       downloadDataUrl(processedDataUrl, filename);
-    }
-  };
-
-  // Export dokumen ke file PDF standar A4
-  const handleExportPdf = async () => {
-    if (!processedDataUrl || isExportingPdf) return;
-    setIsExportingPdf(true);
-    try {
-      const page: ScannedPage = {
-        id: `page-${Date.now()}`,
-        originalDataUrl: processedDataUrl,
-        corners: [
-          { x: 0, y: 0 },
-          { x: currentCanvas.width, y: 0 },
-          { x: currentCanvas.width, y: currentCanvas.height },
-          { x: 0, y: currentCanvas.height },
-        ],
-        originalWidth: currentCanvas.width,
-        originalHeight: currentCanvas.height,
-        processedDataUrl: processedDataUrl,
-        mode,
-        options: { mode, brightness, contrast, threshold, sharpness },
-        createdAt: Date.now(),
-      };
-
-      await exportPagesToPdf([page], {
-        pageSize: 'a4',
-        marginMm: 10,
-        filename: `scanned-document-${Date.now()}.pdf`,
-      });
-    } catch (err) {
-      console.error('PDF export error:', err);
-      alert('Gagal mengekspor dokumen ke PDF.');
-    } finally {
-      setIsExportingPdf(false);
     }
   };
 
@@ -291,31 +250,18 @@ export const ScanEnhancer: React.FC<ScanEnhancerProps> = ({
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => handleDownloadImage('jpeg')}
-              className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-750 active:scale-95"
+              className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3.5 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-750 active:scale-95"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>JPG</span>
+              <span>Download JPG</span>
             </button>
 
             <button
               onClick={() => handleDownloadImage('png')}
-              className="flex items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-750 active:scale-95"
+              className="flex items-center gap-1.5 rounded bg-blue-600 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-500 active:scale-95"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>PNG</span>
-            </button>
-
-            <button
-              onClick={handleExportPdf}
-              disabled={isExportingPdf}
-              className="flex items-center gap-1.5 rounded bg-blue-600 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-500 active:scale-95 disabled:opacity-50"
-            >
-              {isExportingPdf ? (
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <FileText className="h-3.5 w-3.5" />
-              )}
-              <span>Export PDF</span>
+              <span>Download PNG</span>
             </button>
 
             <button

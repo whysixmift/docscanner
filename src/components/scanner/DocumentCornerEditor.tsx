@@ -117,7 +117,6 @@ export const DocumentCornerEditor: React.FC<DocumentCornerEditorProps> = ({
     [displayMetrics, naturalWidth, naturalHeight]
   );
 
-  // Handle interaksi drag 4 titik sudut & kaca pembesar (loupe zoom)
   const handlePointerDown = (idx: number, e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -136,7 +135,6 @@ export const DocumentCornerEditor: React.FC<DocumentCornerEditorProps> = ({
 
     setLoupeClientPos({ x: clientX, y: clientY });
 
-    // Konversi koordinat layar (display) ke koordinat asli foto (natural resolution)
     const dispX = clientX - canvasRect.left;
     const dispY = clientY - canvasRect.top;
 

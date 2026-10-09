@@ -1,11 +1,11 @@
-// Sumber CDN & fallback lokal untuk OpenCV WebAssembly
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const OPENCV_SOURCES: string[] = [
   'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@5.0.0-release.1/dist/opencv.js',
   'https://unpkg.com/@techstark/opencv-js@5.0.0-release.1/dist/opencv.js',
   '/opencv.js',
 ];
 
-// Singleton promise untuk mencegah script di-inject berulang kali jika user klik berkali-kali
 let cvPromise: Promise<any> | null = null;
 let currentStatus = 'Connecting...';
 const statusListeners = new Set<(status: string) => void>();

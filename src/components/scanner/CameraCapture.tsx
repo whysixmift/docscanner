@@ -20,7 +20,6 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
     isActive,
     isStarting,
     error,
-    facingMode,
     hasMultipleCameras,
     startCamera,
     stopCamera,

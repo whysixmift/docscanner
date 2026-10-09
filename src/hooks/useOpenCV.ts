@@ -33,7 +33,7 @@ export function useOpenCV(): UseOpenCVReturn {
     return unsubscribe;
   }, []);
 
-  const initialize = useCallback(async () => {
+  const loadEngine = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -62,13 +62,37 @@ export function useOpenCV(): UseOpenCVReturn {
   }, []);
 
   useEffect(() => {
-    void initialize();
-  }, [initialize]);
+    let cancelled = false;
+
+    loadOpenCV()
+      .then((cv) => {
+        if (!cancelled && cv) {
+          setCvInstance(cv);
+          setIsReady(true);
+          setIsLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error('Failed to load OpenCV:', err);
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Failed to initialize computer vision engine. Check your connection.'
+          );
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const retry = useCallback(() => {
     resetOpenCVLoader();
-    void initialize();
-  }, [initialize]);
+    void loadEngine();
+  }, [loadEngine]);
 
   return { isReady, isLoading, statusText, error, retry, cv: cvInstance };
 }

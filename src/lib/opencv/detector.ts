@@ -3,7 +3,6 @@
 import { DetectionResult, Point, QuadCorners } from './types';
 import { loadOpenCV } from './loader';
 
-// Hitung luas poligon menggunakan rumus Shoelace (Gauss formula)
 function shoelaceArea(pts: Point[]): number {
   let area = 0;
   for (let i = 0; i < pts.length; i++) {
@@ -13,13 +12,11 @@ function shoelaceArea(pts: Point[]): number {
   return Math.abs(area) / 2;
 }
 
-// Cari 4 sudut segiempat dengan luas terbesar dari convex hull
 function findMaxAreaQuad(hullPts: Point[]): Point[] | null {
   const n = hullPts.length;
   if (n === 4) return hullPts;
   if (n < 4) return null;
 
-  // Batasi maksimal 14 titik dominan untuk menjaga performa
   let pts = hullPts;
   if (n > 14) {
     const step = n / 14;
@@ -51,7 +48,6 @@ function findMaxAreaQuad(hullPts: Point[]): Point[] | null {
   return bestQuad;
 }
 
-// Urutkan 4 titik sudut searah jarum jam: [Top-Left, Top-Right, Bottom-Right, Bottom-Left]
 export function orderCorners(pts: Point[]): QuadCorners {
   if (pts.length !== 4) {
     throw new Error('Expected 4 points for ordering');
@@ -207,16 +203,12 @@ export async function detectDocument(
 
   try {
     const srcMat = track(cv.imread(offscreenCanvas));
-
-    // Konversi ke grayscale
     const gray = track(new cv.Mat());
     cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
 
-    // Reduksi noise dengan Gaussian blur
     const blurred = track(new cv.Mat());
     cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
 
-    // Normalisasi kontras (CLAHE)
     const clahe = track(new cv.CLAHE(3.0, new cv.Size(8, 8)));
     const equalized = track(new cv.Mat());
     clahe.apply(blurred, equalized);
@@ -280,7 +272,7 @@ export async function detectDocument(
       }
     };
 
-    // Strategi 1: Adaptive thresholding (tahan bayangan dan pencahayaan tidak merata)
+    // Strategy 1: Adaptive thresholding
     const adaptiveThresh = track(new cv.Mat());
     cv.adaptiveThreshold(blurred, adaptiveThresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 51, -8);
 
@@ -296,7 +288,7 @@ export async function detectDocument(
       evaluateContour(contoursAdaptive.get(i), 1.2);
     }
 
-    // Strategi 2: CLAHE + Canny (efektif untuk kertas putih di meja terang / low-contrast)
+    // Strategy 2: CLAHE + Canny
     const edgesClahe = track(new cv.Mat());
     cv.Canny(equalized, edgesClahe, 35, 110);
     const dilateKernel = track(cv.Mat.ones(3, 3, cv.CV_8U));
@@ -311,7 +303,7 @@ export async function detectDocument(
       evaluateContour(contoursClahe.get(i), 1.0);
     }
 
-    // Strategi 3: Canny standar (efektif untuk background kontras tinggi)
+    // Strategy 3: Standard Canny
     const edgesStd = track(new cv.Mat());
     cv.Canny(blurred, edgesStd, 50, 150);
     const dilatedStd = track(new cv.Mat());

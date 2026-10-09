@@ -92,7 +92,6 @@ export const ScannerApp: React.FC = () => {
     }
   };
 
-  // Input via drag and drop
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
@@ -107,12 +106,10 @@ export const ScannerApp: React.FC = () => {
     }
   };
 
-  // Tangkap frame gambar dari kamera
   const handleCameraCapture = async (canvas: HTMLCanvasElement) => {
     await processImageForDetection(canvas);
   };
 
-  // Putar orientasi gambar 90 derajat
   const handleRotateSource = async () => {
     if (!sourceImage) return;
 
@@ -129,7 +126,6 @@ export const ScannerApp: React.FC = () => {
     await processImageForDetection(rotated);
   };
 
-  // Jalankan ulang auto deteksi batas kertas
   const handleReRunAutoDetect = async () => {
     if (!sourceImage) return;
     setIsDetecting(true);
@@ -148,7 +144,6 @@ export const ScannerApp: React.FC = () => {
     }
   };
 
-  // Konfirmasi 4 titik sudut & luruskan dokumen (perspective warp)
   const handleConfirmCorners = async () => {
     if (!sourceImage || !corners) return;
 

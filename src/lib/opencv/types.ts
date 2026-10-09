@@ -30,15 +30,3 @@ export interface EnhancementOptions {
   threshold?: number;  // 5 to 50 for adaptive C offset, default 12
   sharpness?: number;  // 0 to 2.0, default 1.0
 }
-
-export interface ScannedPage {
-  id: string;
-  originalDataUrl: string;
-  corners: QuadCorners;
-  originalWidth: number;
-  originalHeight: number;
-  processedDataUrl: string;
-  mode: EnhancementMode;
-  options: EnhancementOptions;
-  createdAt: number;
-}
