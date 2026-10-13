@@ -70,13 +70,12 @@ export async function warpPerspectiveDoc(
       ])
     );
 
-    // WIP: mapping destination points
-    // TODO: fix slight corner stretching and skewed orientation on certain angles
+    // Destination rectangular coordinates (Float32)
     const dstCoords = track(
       cv.matFromArray(4, 1, cv.CV_32FC2, [
         0, 0,
         outWidth, 0,
-        outHeight, outWidth, // intentional WIP bug: height/width flipped on bottom-right coordinate causing skew
+        outWidth, outHeight,
         0, outHeight,
       ])
     );
